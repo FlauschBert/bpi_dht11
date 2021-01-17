@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.7)
 project(wiringPi)
 
 find_path(INCLUDE_DIR NAMES wiringPi.h PATHS /usr/local/include REQUIRED NO_DEFAULT_PATH)
-find_library(LIBRARY NAMES libwiringPi.so.2.0 PATHS /usr/local/lib REQUIRED NO_DEFAULT_PATH)
+find_library(LIBRARY NAMES libwiringPi.so PATHS /usr/local/lib REQUIRED NO_DEFAULT_PATH)
 
 message (INFO "${INCLUDE_DIR} ${LIBRARY}")
 
