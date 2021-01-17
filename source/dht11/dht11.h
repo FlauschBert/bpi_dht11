@@ -37,7 +37,9 @@ sendStartSignal (int const pin)
 	//
 	// Host pulls up the voltage
 	//
-	pullUpDnControl (pin, PUD_UP);
+	digitalWrite (pin, HIGH);
+	pinMode (pin, INPUT);
+	digitalWrite (pin, HIGH); 
 }
 
 inline void
@@ -52,7 +54,6 @@ waitForResponseSignal (int const pin)
 	// after following LOW and HIGH of DHT/Client data
 	// is sent
 	//
-	pinMode (pin, INPUT);
 	while (HIGH == digitalRead (pin));
 	while (LOW  == digitalRead (pin));
 	while (HIGH == digitalRead (pin));
@@ -70,9 +71,7 @@ getCounts (int const pin)
 	// Count number of digitalReads of HIGH edges:
 	// * lower value: 0 bit
 	// * higher value: 1 bit
-
-	pinMode (pin, INPUT);
-
+	//
 	Counts counts;
 	for (auto& count : counts)
 	{

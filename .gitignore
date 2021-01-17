@@ -1,4 +1,7 @@
 build/*
+*.swp
+*.cpp~
+*.h~
 
 # Prerequisites
 *.d
