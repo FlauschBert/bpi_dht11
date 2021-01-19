@@ -2,26 +2,56 @@
 #include <wiringPi.h>
 
 #include <bitset>
-#include <array>
+#include <vector>
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
 
+namespace {
+
+int expectRead (int const pin, int const level, int const maximumCount)
+{
+	int count = 0;
+	while (digitalRead (pin) == level)
+		if (count++ >= maximumCount)
+			return 0;
+	return count;
+}
+
+void inputPullUp (int const pin)
+{
+	pullUpDnControl (pin, PUD_UP);
+}
+
+int constexpr sMaxCount = 1000;
+
+}
+
 namespace dht11 {
 
 inline int
-setup ()
+setup (int const pin)
 {
 	// Try to get high process priority
 	// (don't know whether this does help anything)
 	piHiPri (99);
 
-	return wiringPiSetup ();
+	if (-1 == wiringPiSetup ())
+		return -1;
+
+	inputPullUp (pin);
+	return 0;
 }
 
+/* start reading:
+   wait 2s after reading for next read
+*/
 inline void
 sendStartSignal (int const pin)
 {
+	inputPullUp (pin);
+	delay (1 /*ms*/);
+
 	// Robotics 5.2 Figure 3
 
 	// Step one (AOSONG):
@@ -31,36 +61,35 @@ sendStartSignal (int const pin)
 	//
 	pinMode (pin, OUTPUT);
 	digitalWrite (pin, LOW);
-	delay (18 /*ms*/);
+	delay (20 /*ms*/);
 	
 	// Step two (AOSONG):
 	//
 	// Host pulls up the voltage
 	//
-	digitalWrite (pin, HIGH);
-	pinMode (pin, INPUT);
-	digitalWrite (pin, HIGH); 
+	inputPullUp (pin);
 }
 
-inline void
+inline bool
 waitForResponseSignal (int const pin)
 {
 	// Robotics 5.2 Figure 3
 
 	// Step three (AOSONG):
 	//
-	// first HIGH is still pull up of the MCU/Host
-	// (from sendStartSignal())
-	// after following LOW and HIGH of DHT/Client data
-	// is sent
+	// Data of DHT/Client is sent after LOW and HIGH
 	//
-	while (HIGH == digitalRead (pin));
-	while (LOW  == digitalRead (pin));
-	while (HIGH == digitalRead (pin));
+	delayMicroseconds (55);
+	pinMode (pin, INPUT);
+	if (0 == expectRead (pin, LOW, sMaxCount))
+		return false;
+	if (0 == expectRead (pin, HIGH, sMaxCount))
+		return false;
+	return true;
 }
 
 size_t constexpr cCounts = 40;
-using Counts = std::array<int, cCounts>;
+using Counts = std::vector<int>;
 
 inline Counts
 getCounts (int const pin)
@@ -69,15 +98,18 @@ getCounts (int const pin)
 	//
 	// LOW and HIGH edge make one bit
 	// Count number of digitalReads of HIGH edges:
-	// * lower value: 0 bit
-	// * higher value: 1 bit
+	// * LOW value: 0 bit
+	// * HIGH value: 1 bit
 	//
 	Counts counts;
+	counts.resize (cCounts);
 	for (auto& count : counts)
 	{
-		while (LOW  == digitalRead (pin));
-		int counter = 0;
-		while (HIGH == digitalRead (pin)) ++counter;
+		if (0 == expectRead (pin, LOW, sMaxCount))
+			return {};
+		int const counter = expectRead (pin, HIGH, sMaxCount);
+		if (0 == counter)
+			return {};
 		count = counter;
 	}
 
@@ -141,6 +173,8 @@ inline Data
 getDataFromBits (int const pin)
 {
 	auto const counts = getCounts (pin);
+	if (counts.empty ())
+		return {};
 	auto const threshold = getThreshold (counts);
 
 	if (!parityValid (counts, threshold))
