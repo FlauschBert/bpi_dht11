@@ -13,8 +13,14 @@ int main ()
 
 	// Trigger sending data on serial line
 	sendStartSignal (pin);
+
 	// Wait for data of client
-	waitForResponseSignal (pin);
+	if (!waitForResponseSignal (pin))
+	{
+		std::cout << "Waiting failed.\n";
+		return 1;
+	}
+
 	// Read and evaluate data from client
 	auto const data = getDataFromBits (pin);
 
@@ -22,7 +28,7 @@ int main ()
 	if (-1 == data.humidity &&
 		  -1 == data.temperature)
 	{
-		std::cout << "Parity invalid. Run again.\n";
+		std::cout << "Parity/Read invalid.\n";
 		return 1;
 	}
 

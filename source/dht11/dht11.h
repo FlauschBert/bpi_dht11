@@ -2,10 +2,25 @@
 #include <wiringPi.h>
 
 #include <bitset>
-#include <array>
+#include <vector>
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+
+namespace {
+
+int expectRead (int const pin, int const level, int const maximumCount)
+{
+	int count = 0;
+	while (digitalRead (pin) == level)
+		if (count++ >= maximumCount)
+			return 0;
+	return count;
+}
+
+int constexpr sMaxCount = 1000;
+
+}
 
 namespace dht11 {
 
@@ -40,7 +55,7 @@ sendStartSignal (int const pin)
 	pullUpDnControl (pin, PUD_UP);
 }
 
-inline void
+inline bool
 waitForResponseSignal (int const pin)
 {
 	// Robotics 5.2 Figure 3
@@ -53,13 +68,17 @@ waitForResponseSignal (int const pin)
 	// is sent
 	//
 	pinMode (pin, INPUT);
-	while (HIGH == digitalRead (pin));
-	while (LOW  == digitalRead (pin));
-	while (HIGH == digitalRead (pin));
+	if (0 == expectRead (pin, HIGH, sMaxCount))
+		return false;
+	if (0 == expectRead (pin, LOW, sMaxCount))
+		return false;
+	if (0 == expectRead (pin, HIGH, sMaxCount))
+		return false;
+	return true;
 }
 
 size_t constexpr cCounts = 40;
-using Counts = std::array<int, cCounts>;
+using Counts = std::vector<int>;
 
 inline Counts
 getCounts (int const pin)
@@ -68,15 +87,18 @@ getCounts (int const pin)
 	//
 	// LOW and HIGH edge make one bit
 	// Count number of digitalReads of HIGH edges:
-	// * lower value: 0 bit
-	// * higher value: 1 bit
+	// * LOW value: 0 bit
+	// * HIGH value: 1 bit
 	//
 	Counts counts;
+	counts.resize (cCounts);
 	for (auto& count : counts)
 	{
-		while (LOW  == digitalRead (pin));
-		int counter = 0;
-		while (HIGH == digitalRead (pin)) ++counter;
+		if (0 == expectRead (pin, LOW, sMaxCount))
+			return {};
+		int const counter = expectRead (pin, HIGH, sMaxCount);
+		if (0 == counter)
+			return {};
 		count = counter;
 	}
 
@@ -140,6 +162,8 @@ inline Data
 getDataFromBits (int const pin)
 {
 	auto const counts = getCounts (pin);
+	if (counts.empty ())
+		return {};
 	auto const threshold = getThreshold (counts);
 
 	if (!parityValid (counts, threshold))
