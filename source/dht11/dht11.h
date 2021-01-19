@@ -174,13 +174,9 @@ getDataFromBits (int const pin)
 	int constexpr bits = 8;
 	return {
 		// humidity int is bits 0 - 7 from highest to lowest bit
-		getIntFromCounts (0 * bits, bits, counts, threshold) +
-		// humidity int is bits 8 - 15 decimal from highest to lowest bit
-		getIntFromCounts (1 * bits, bits, counts, threshold),
+		getIntFromCounts (0 * bits, bits, counts, threshold),
 		// temperature int is bits 16 - 23 from highest to lowest bit
-		getIntFromCounts (2 * bits, bits, counts, threshold) +
-		// temperature int is bits 24 - 31 decimal from highest to lowest bit
-		getIntFromCounts (3 * bits, bits, counts, threshold)
+		getIntFromCounts (2 * bits, bits, counts, threshold)
 	};
 }
 
