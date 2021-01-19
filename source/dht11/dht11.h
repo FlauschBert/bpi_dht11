@@ -128,14 +128,15 @@ getThreshold (Counts const& counts)
 }
 
 inline int
-getIntFromCounts (size_t const pos, Counts const& counts, size_t const threshold)
+getIntFromCounts (size_t const pos, size_t const bits, Counts const& counts, size_t const threshold)
 {
 	// counts [pos; pos+7] -> intValue [7;0]
-	std::bitset<8> intValue;
+	// counts [pos; pos+15] -> intValue [15;0]
+	std::bitset<16> intValue;
 	intValue.reset ();
 
 	auto cIt = counts.begin () + pos;
-	for (int p = 7; p > -1; --p, ++cIt)
+	for (int p = std::min (bits, static_cast<size_t> (16)) - 1; p > -1; --p, ++cIt)
 		if (*cIt > threshold)
 			intValue.set (p);
 
@@ -145,12 +146,13 @@ getIntFromCounts (size_t const pos, Counts const& counts, size_t const threshold
 inline bool
 parityValid (Counts const& counts, size_t const threshold)
 {
-	auto parity = getIntFromCounts (0, counts, threshold);
-	parity += getIntFromCounts (8, counts, threshold);
-	parity += getIntFromCounts (16, counts, threshold);
-	parity += getIntFromCounts (24, counts, threshold);
+	int constexpr bits = 8;
+	auto parity = getIntFromCounts (0 * bits, bits, counts, threshold);
+	parity += getIntFromCounts (1 * bits, bits, counts, threshold);
+	parity += getIntFromCounts (2 * bits, bits, counts, threshold);
+	parity += getIntFromCounts (3 * bits, bits, counts, threshold);
 	// last 8 bits are parity bits
-	return parity == getIntFromCounts (32, counts, threshold);
+	return parity == getIntFromCounts (4 * bits, bits, counts, threshold);
 }
 
 struct Data {
@@ -169,11 +171,16 @@ getDataFromBits (int const pin)
 	if (!parityValid (counts, threshold))
 		return {};
 
+	int constexpr bits = 8;
 	return {
 		// humidity int is bits 0 - 7 from highest to lowest bit
-		getIntFromCounts (0, counts, threshold),
+		getIntFromCounts (0 * bits, bits, counts, threshold) +
+		// humidity int is bits 8 - 15 decimal from highest to lowest bit
+		getIntFromCounts (1 * bits, bits, counts, threshold),
 		// temperature int is bits 16 - 23 from highest to lowest bit
-		getIntFromCounts (16, counts, threshold)
+		getIntFromCounts (2 * bits, bits, counts, threshold) +
+		// temperature int is bits 24 - 31 decimal from highest to lowest bit
+		getIntFromCounts (3 * bits, bits, counts, threshold)
 	};
 }
 
