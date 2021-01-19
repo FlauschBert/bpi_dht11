@@ -37,9 +37,7 @@ sendStartSignal (int const pin)
 	//
 	// Host pulls up the voltage
 	//
-	digitalWrite (pin, HIGH);
-	pinMode (pin, INPUT);
-	digitalWrite (pin, HIGH); 
+	pullUpDnControl (pin, PUD_UP);
 }
 
 inline void
@@ -54,6 +52,7 @@ waitForResponseSignal (int const pin)
 	// after following LOW and HIGH of DHT/Client data
 	// is sent
 	//
+	pinMode (pin, INPUT);
 	while (HIGH == digitalRead (pin));
 	while (LOW  == digitalRead (pin));
 	while (HIGH == digitalRead (pin));

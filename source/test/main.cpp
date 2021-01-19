@@ -1,6 +1,6 @@
 #include <wiringPi.h>
 
-#include <dht11/dht11.h>
+#include "../dht11/dht11.h"
 using namespace dht11;
 
 int main ()
