@@ -29,4 +29,5 @@ Do `make install` to install the library in */usr/local*.
 * [Banana Pi LED test](https://github.com/FlauschBert/bpi_led_test/blob/master/README.md) for initial setup
 * [Documentation of DHT11 from AOSONG](https://lastminuteengineers.com/datasheets/dht11-datasheet.pdf)
 * [Documentation of DHT11 from Robotics](https://robojax.com/learn/arduino/robojax-DHT11_manual.pdf)
+* [Documentation of DHT11 from AdaFruit](https://cdn-shop.adafruit.com/datasheets/Digital+humidity+and+temperature+sensor+AM2302.pdf)
 
