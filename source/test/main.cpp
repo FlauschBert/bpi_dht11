@@ -25,8 +25,8 @@ int main ()
 	auto const data = getDataFromBits (pin);
 
 	// Consider parity bit check
-	if (-1 == data.humidity &&
-		  -1 == data.temperature)
+	if (-1.f == data.humidity &&
+		  -1.f == data.temperature)
 	{
 		std::cout << "Parity/Read invalid.\n";
 		return 1;

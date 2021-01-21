@@ -1,6 +1,7 @@
 #pragma once
 #include <wiringPi.h>
 
+#include <cmath>
 #include <bitset>
 #include <vector>
 #include <algorithm>
@@ -156,8 +157,8 @@ parityValid (Counts const& counts, size_t const threshold)
 }
 
 struct Data {
-	int humidity = -1;
-	int temperature = -1;
+	float humidity = -1.f;
+	float temperature = -1.f;
 };
 
 inline Data
@@ -172,11 +173,21 @@ getDataFromBits (int const pin)
 		return {};
 
 	int constexpr bits = 8;
+
+	// humidity bits 0 - 7: integer value
+	int const hi = getIntFromCounts (0 * bits, bits, counts, threshold);
+	// humidity bits 8 - 15: fractional value
+	int const hf = getIntFromCounts (1 * bits, bits, counts, threshold);
+
+	// temperature bits 16 - 23: integer value
+	int const ti = getIntFromCounts (2 * bits, bits, counts, threshold);
+	// temperature bits 24 - 31: fractional value
+	int const tf = getIntFromCounts (3 * bits, bits, counts, threshold);
+
+
 	return {
-		// humidity int is bits 0 - 7 from highest to lowest bit
-		getIntFromCounts (0 * bits, bits, counts, threshold),
-		// temperature int is bits 16 - 23 from highest to lowest bit
-		getIntFromCounts (2 * bits, bits, counts, threshold)
+		hi + hf * 0.1f,
+		ti + tf * 0.1f
 	};
 }
 
